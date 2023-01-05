@@ -1,4 +1,4 @@
-package ru.orange.studback.plugins
+package ru.orange.studback.dataservices.students.plugins
 
 import io.ktor.server.routing.*
 import io.ktor.http.*
