@@ -1,4 +1,4 @@
-package studback.orange.ru
+package ru.orange.studback
 
 import io.ktor.server.routing.*
 import io.ktor.http.*
@@ -7,7 +7,6 @@ import io.ktor.server.response.*
 import io.ktor.server.request.*
 import kotlin.test.*
 import io.ktor.server.testing.*
-import studback.orange.ru.plugins.*
 
 class ApplicationTest {
 }

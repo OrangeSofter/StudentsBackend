@@ -1,1 +1,1 @@
-rootProject.name = "studback.orange.ru.studentsbackend"
+rootProject.name = "ru.orange.studback.studentsbackend"

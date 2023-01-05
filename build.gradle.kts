@@ -7,10 +7,10 @@ plugins {
     id("io.ktor.plugin") version "2.2.2"
 }
 
-group = "studback.orange.ru"
+group = "ru.orange.studback"
 version = "0.0.1"
 application {
-    mainClass.set("studback.orange.ru.ApplicationKt")
+    mainClass.set("ru.orange.studback.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
