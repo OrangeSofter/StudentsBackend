@@ -1,0 +1,1 @@
+rootProject.name = "studback.orange.ru.studentsbackend"
