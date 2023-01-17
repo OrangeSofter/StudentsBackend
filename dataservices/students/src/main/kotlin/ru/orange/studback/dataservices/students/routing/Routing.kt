@@ -8,30 +8,13 @@ import redis.clients.jedis.JedisPool
 
 fun Application.configureRouting() {
     val pool = JedisPool("localhost", 6379)
+    val controller = Controller(pool)
 
     routing {
         get("/") {
             call.respondText("Hello World!")
         }
-        post("/put_student") {
-            runCatching {
-                pool.resource.use { jedis ->
-                    jedis.set("clientName", "MyClient")
-                }
-            }.onFailure {
-                call.respondText { "Failure" }
-            }
-            call.respondText("Success")
-        }
-        get("/get_students"){
-            runCatching {
-                pool.resource.use { jedis ->
-                    val cl = jedis.get("clientName") ?: "notSet"
-                    call.respondText (cl)
-                }
-            }.onFailure {
-                call.respondText { "Failure" }
-            }
-        }
+        post("/put_student") { controller.putStudents(call) }
+        get("/get_students"){controller.getStudents(call)}
     }
 }
