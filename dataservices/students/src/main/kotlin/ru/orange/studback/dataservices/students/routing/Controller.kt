@@ -4,6 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import redis.clients.jedis.JedisPool
+import ru.orange.studback.common.extensions.respondFailure
 
 internal class Controller(private val jedisPool: JedisPool) {
 
@@ -14,7 +15,7 @@ internal class Controller(private val jedisPool: JedisPool) {
                 call.respondText (cl)
             }
         }.onFailure {
-            call.respond(HttpStatusCode.InternalServerError, it.toString())
+            call.respondFailure(it)
         }
     }
 
@@ -24,7 +25,7 @@ internal class Controller(private val jedisPool: JedisPool) {
                 jedis.set("clientName", "MyClient")
             }
         }.onFailure {
-            call.respond(HttpStatusCode.InternalServerError, it.toString())
+            call.respondFailure(it)
         }
         call.respondText("Success")
     }
