@@ -1,32 +1,71 @@
 package ru.orange.studback.dataservices.students.routing
 
-import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.response.*
+import io.ktor.server.request.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import redis.clients.jedis.JedisPool
-import ru.orange.studback.common.extensions.respondFailure
+import ru.orange.studback.common.extensions.*
+import ru.orange.studback.dataservices.students.data.StudentDbDto
+import ru.orange.studback.dataservices.students.data.StudentRequestDto
 
 internal class Controller(private val jedisPool: JedisPool) {
 
-    suspend fun putStudents(call: ApplicationCall, ){
+    suspend fun putStudent(call: ApplicationCall) {
+        val requestModel = call.receive<StudentRequestDto>()
+        val dbModel = requestModel.toDbDto()
+        val dbString = Json.encodeToString(dbModel)
         runCatching {
             jedisPool.resource.use { jedis ->
-                val cl = jedis.get("clientName") ?: "notSet"
-                call.respondText (cl)
+                jedis.set(requestModel.number, dbString)
             }
+            call.respondSuccess()
         }.onFailure {
-            call.respondFailure(it)
+            call.respondInternalFailure(it)
         }
     }
 
-    suspend fun getStudents(call: ApplicationCall){
-        runCatching {
-            jedisPool.resource.use { jedis ->
-                jedis.set("clientName", "MyClient")
-            }
-        }.onFailure {
-            call.respondFailure(it)
+    suspend fun getStudent(call: ApplicationCall) {
+        val num = call.request.queryParameters["number"]
+        if (num == null) {
+            call.respondBadRequest()
+            return
         }
-        call.respondText("Success")
+        val result = runCatching<String?> {
+            jedisPool.resource.use { jedis ->
+                jedis.get(num)
+            }
+        }
+        if (result.isFailure) {
+            call.respondInternalFailure(result.exceptionOrNull())
+            return
+        }
+        val dbString = result.getOrNull()
+        if (dbString == null) {
+            call.respondNoContent()
+            return
+        }
+        call.respondJson(dbString)
+    }
+
+    suspend fun removeStudent(call: ApplicationCall) {
+        val num = call.receive<String>()
+        val result = runCatching {
+            jedisPool.resource.use { jedis ->
+                jedis.del(num)
+            }
+        }
+        if (result.isFailure) {
+            call.respondInternalFailure(result.exceptionOrNull())
+            return
+        }
+        call.respondSuccess()
     }
 }
+
+private fun StudentRequestDto.toDbDto(): StudentDbDto = StudentDbDto(
+    fio = fio,
+    isMale = isMale,
+    birthDate = birthDate,
+    phone = phone,
+)

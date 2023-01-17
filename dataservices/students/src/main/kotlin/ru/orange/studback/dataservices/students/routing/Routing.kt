@@ -12,9 +12,10 @@ fun Application.configureRouting() {
 
     routing {
         get("/") {
-            call.respondText("Hello World!")
+            call.respondText("Ok")
         }
-        post("/put_student") { controller.putStudents(call) }
-        get("/get_students"){controller.getStudents(call)}
+        post("/put_student") { controller.putStudent(call) }
+        get("/get_student") { controller.getStudent(call) }
+        post("/remove_student") { controller.removeStudent(call) }
     }
 }
