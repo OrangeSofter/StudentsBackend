@@ -32,7 +32,8 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 
-    implementation("redis.clients:jedis:4.3.1")
+    //implementation("com.github.jershell:kbson:0.5.0")
+    implementation("org.mongodb:mongodb-driver-sync:4.8.2")
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
