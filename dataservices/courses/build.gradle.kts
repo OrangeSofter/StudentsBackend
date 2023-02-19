@@ -19,6 +19,11 @@ application {
 
 repositories {
     mavenCentral()
+    maven("https://maven.tryformation.com/releases") {
+        content {
+            includeGroup("com.jillesvangurp")
+        }
+    }
 }
 
 dependencies {
@@ -32,7 +37,9 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 
-    implementation("redis.clients:jedis:4.3.1")
+//    implementation("co.elastic.clients:elasticsearch-java:8.6.1")
+//    implementation("com.fasterxml.jackson.core:jackson-databind:2.12.3")
+    implementation("com.jillesvangurp:search-client:2.0.0-RC-6")
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")

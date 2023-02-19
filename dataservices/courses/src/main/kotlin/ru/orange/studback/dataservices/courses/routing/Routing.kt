@@ -1,21 +1,24 @@
 package ru.orange.studback.dataservices.courses.routing
 
+
+import com.jillesvangurp.ktsearch.KtorRestClient
+import com.jillesvangurp.ktsearch.SearchClient
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import redis.clients.jedis.JedisPool
 
 
 fun Application.configureRouting() {
-    val pool = JedisPool("localhost", 6379)
-    val controller = Controller(pool)
-
+    val client = SearchClient(
+        KtorRestClient()
+    )
+    val controller = Controller(client)
     routing {
         get("/") {
             call.respondText("Ok")
         }
-        post("/put_student") { controller.putStudent(call) }
-        get("/get_student") { controller.getStudent(call) }
-        post("/remove_student") { controller.removeStudent(call) }
+        post("/put") { controller.put(call) }
+        get("/get") { controller.get(call) }
+        post("/remove") { controller.remove(call) }
     }
 }

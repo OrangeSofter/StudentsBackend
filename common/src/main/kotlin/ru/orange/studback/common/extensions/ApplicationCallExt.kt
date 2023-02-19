@@ -20,7 +20,11 @@ suspend fun ApplicationCall.respondNoContent() {
     respond(HttpStatusCode.NoContent, "NoContent")
 }
 
-suspend fun ApplicationCall.respondJson(json: String) {
+suspend fun ApplicationCall.respondJson(json: String?) {
     response.header(HttpHeaders.ContentType, "application/json")
+    if (json == null) {
+        respondNoContent()
+        return
+    }
     respond(HttpStatusCode.OK, json)
 }
