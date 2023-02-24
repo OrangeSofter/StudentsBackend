@@ -4,56 +4,114 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import redis.clients.jedis.JedisPool
 import ru.orange.studback.common.extensions.*
-import ru.orange.studback.dataservices.attending.data.StudentDbDto
-import ru.orange.studback.dataservices.attending.data.StudentRequestDto
+import ru.orange.studback.dataservices.attending.data.AttendingDto
+import java.sql.Connection
+import java.sql.ResultSet
+import java.sql.Statement
 
-internal class Controller(private val jedisPool: JedisPool) {
+internal class Controller(private val postgreConnection: Connection) {
 
-    suspend fun putStudent(call: ApplicationCall) {
-        val requestModel = call.receive<StudentRequestDto>()
-        val dbModel = requestModel.toDbDto()
-        val dbString = Json.encodeToString(dbModel)
-        runCatching {
-            jedisPool.resource.use { jedis ->
-                jedis.set(requestModel.number, dbString)
-            }
-            call.respondSuccess()
-        }.onFailure {
-            call.respondInternalFailure(it)
-        }
-    }
 
-    suspend fun getStudent(call: ApplicationCall) {
-        val num = call.request.queryParameters["number"]
-        if (num == null) {
-            call.respondBadRequest()
-            return
-        }
-        val result = runCatching<String?> {
-            jedisPool.resource.use { jedis ->
-                jedis.get(num)
-            }
+    /**
+     *  CREATE TABLE IF NOT EXISTS $TABLE_NAME (
+     *                     $LEARNING_WEEK_COLUMN           integer,
+     *                     $COURSE_NAME_COLUMN             text,
+     *                     $ATTENDING_STUDENT_NUMS_COLUMN  text[]
+     *                 );
+     */
+    suspend fun put(call: ApplicationCall) {
+        val requestModel = call.receive<AttendingDto>()
+        val result = runCatching {
+            val st: Statement = postgreConnection.createStatement()
+            st.executeUpdate(
+                """
+                 INSERT INTO $TABLE_NAME VALUES (
+                 ${requestModel.learningWeek}, 
+                 '${requestModel.courseName}', 
+                 '{${requestModel.attendingStudentNums.joinToString { "\"$it\"" }}}'
+                )
+                """.trimIndent()
+            )
+            st.close()
         }
         if (result.isFailure) {
             call.respondInternalFailure(result.exceptionOrNull())
             return
         }
-        val dbString = result.getOrNull()
-        if (dbString == null) {
+        call.respondSuccess()
+    }
+
+    suspend fun getAttendingStudents(call: ApplicationCall) {
+        val learningWeek = call.request.queryParameters["learningWeek"]?.toIntOrNull()
+        val courseName = call.request.queryParameters["courseName"]
+        if (learningWeek == null || courseName == null) {
+            call.respondBadRequest()
+            return
+        }
+        val result = runCatching<Array<String>?> {
+            val st: Statement = postgreConnection.createStatement()
+            val rs: ResultSet = st.executeQuery(
+                """
+                SELECT $ATTENDING_STUDENT_NUMS_COLUMN FROM $TABLE_NAME 
+                WHERE $LEARNING_WEEK_COLUMN = $learningWeek 
+                AND $COURSE_NAME_COLUMN = '$courseName'
+                """.trimIndent()
+            )
+            if (!rs.next()) {
+                call.respondNoContent()
+                return
+            }
+            val arr: Array<String>? = rs.getArray(1)?.array as Array<String>?
+            rs.close()
+            st.close()
+            arr
+        }
+        if (result.isFailure) {
+            call.respondInternalFailure(result.exceptionOrNull())
+            return
+        }
+        val arr = result.getOrNull()
+        if (arr.isNullOrEmpty()) {
             call.respondNoContent()
             return
         }
-        call.respondJson(dbString)
+        call.respondJson(Json.encodeToString(arr))
     }
 
-    suspend fun removeStudent(call: ApplicationCall) {
-        val num = call.receive<String>()
+    suspend fun update(call: ApplicationCall) {
+        val requestModel = call.receive<AttendingDto>()
         val result = runCatching {
-            jedisPool.resource.use { jedis ->
-                jedis.del(num)
-            }
+            val st: Statement = postgreConnection.createStatement()
+            st.executeUpdate(
+                """
+                UPDATE $TABLE_NAME SET
+                ($LEARNING_WEEK_COLUMN, $ATTENDING_STUDENT_NUMS_COLUMN) = (
+                 ${requestModel.learningWeek},
+                 '{${requestModel.attendingStudentNums.joinToString()}'
+                ) WHERE $COURSE_NAME_COLUMN = ${requestModel.courseName}
+                """.trimIndent()
+            )
+            st.close()
+        }
+        if (result.isFailure) {
+            call.respondInternalFailure(result.exceptionOrNull())
+            return
+        }
+        call.respondSuccess()
+    }
+
+    suspend fun removeLecture(call: ApplicationCall) {
+        val courseName = call.receive<String>()
+        val result = runCatching {
+            val st: Statement = postgreConnection.createStatement()
+            st.executeUpdate(
+                """
+                DELETE FROM $TABLE_NAME 
+                WHERE $COURSE_NAME_COLUMN = $courseName
+                """.trimIndent()
+            )
+            st.close()
         }
         if (result.isFailure) {
             call.respondInternalFailure(result.exceptionOrNull())
@@ -63,9 +121,8 @@ internal class Controller(private val jedisPool: JedisPool) {
     }
 }
 
-private fun StudentRequestDto.toDbDto(): StudentDbDto = StudentDbDto(
-    fio = fio,
-    isMale = isMale,
-    birthDate = birthDate,
-    phone = phone,
-)
+private const val TABLE_NAME = "attending"
+
+private const val LEARNING_WEEK_COLUMN = "learning_week"
+private const val COURSE_NAME_COLUMN = "course_name"
+private const val ATTENDING_STUDENT_NUMS_COLUMN = "attending_student_nums"
