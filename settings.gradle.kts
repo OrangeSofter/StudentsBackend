@@ -17,3 +17,6 @@ findProject(":dataservices:courses")?.name = "courses"
 
 include("dataservices:attending")
 findProject(":dataservices:attending")?.name = "attending"
+
+include("domain_services:reports")
+findProject("domain_services:reports")?.name = "reports"
