@@ -8,10 +8,10 @@ plugins {
     kotlin("plugin.serialization") version "1.8.0"
 }
 
-group = "ru.orange.studback.dataservices.student_groups"
+group = "ru.orange.studback.domainservices.reports"
 version = "0.0.1"
 application {
-    mainClass.set("ru.orange.studback.dataservices.student_groups.ApplicationKt")
+    mainClass.set("ru.orange.studback.domainservices.reports.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
@@ -19,6 +19,11 @@ application {
 
 repositories {
     mavenCentral()
+    maven("https://maven.tryformation.com/releases") {
+        content {
+            includeGroup("com.jillesvangurp")
+        }
+    }
 }
 
 dependencies {
@@ -32,8 +37,13 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 
+    implementation("org.postgresql:postgresql:42.5.4")
+    implementation("org.neo4j.driver:neo4j-java-driver:5.4.0")
+    implementation("com.jillesvangurp:search-client:2.0.0-RC-6")
     implementation("org.mongodb:mongodb-driver-sync:4.8.2")
+    implementation("redis.clients:jedis:4.3.1")
 
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+    implementation(kotlin("stdlib-jdk8"))
 }

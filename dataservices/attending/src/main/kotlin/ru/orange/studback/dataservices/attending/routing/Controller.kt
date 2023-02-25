@@ -15,9 +15,11 @@ internal class Controller(private val postgreConnection: Connection) {
 
     /**
      *  CREATE TABLE IF NOT EXISTS $TABLE_NAME (
+     *                     $ID_COLUMN                      serial primary key,
      *                     $LEARNING_WEEK_COLUMN           integer,
      *                     $COURSE_NAME_COLUMN             text,
-     *                     $ATTENDING_STUDENT_NUMS_COLUMN  text[]
+     *                     $ATTENDING_STUDENT_NUMS_COLUMN  text[],
+     *                     $ABSENT_STUDENT_NUMS_COLUMN     text[]
      *                 );
      */
     suspend fun put(call: ApplicationCall) {
@@ -27,9 +29,11 @@ internal class Controller(private val postgreConnection: Connection) {
             st.executeUpdate(
                 """
                  INSERT INTO $TABLE_NAME VALUES (
+                 DEFAULT,
                  ${requestModel.learningWeek}, 
                  '${requestModel.courseName}', 
-                 '{${requestModel.attendingStudentNums.joinToString { "\"$it\"" }}}'
+                 '{${requestModel.attendingStudentNums.joinToString { "\"$it\"" }}}', 
+                 '{${requestModel.absentStudentNums.joinToString { "\"$it\"" }}}'
                 )
                 """.trimIndent()
             )
@@ -86,9 +90,10 @@ internal class Controller(private val postgreConnection: Connection) {
             st.executeUpdate(
                 """
                 UPDATE $TABLE_NAME SET
-                ($LEARNING_WEEK_COLUMN, $ATTENDING_STUDENT_NUMS_COLUMN) = (
+                ($LEARNING_WEEK_COLUMN, $ATTENDING_STUDENT_NUMS_COLUMN, $ABSENT_STUDENT_NUMS_COLUMN) = (
                  ${requestModel.learningWeek},
-                 '{${requestModel.attendingStudentNums.joinToString()}'
+                 '{${requestModel.attendingStudentNums.joinToString()}',
+                 '{${requestModel.absentStudentNums.joinToString()}'
                 ) WHERE $COURSE_NAME_COLUMN = ${requestModel.courseName}
                 """.trimIndent()
             )
@@ -123,6 +128,8 @@ internal class Controller(private val postgreConnection: Connection) {
 
 private const val TABLE_NAME = "attending"
 
+private const val ID_COLUMN = "id"
 private const val LEARNING_WEEK_COLUMN = "learning_week"
 private const val COURSE_NAME_COLUMN = "course_name"
 private const val ATTENDING_STUDENT_NUMS_COLUMN = "attending_student_nums"
+private const val ABSENT_STUDENT_NUMS_COLUMN = "absent_student_nums"

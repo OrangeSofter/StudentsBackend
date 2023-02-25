@@ -7,4 +7,5 @@ data class AttendingDto(
     val learningWeek: Int,
     val courseName: String,
     val attendingStudentNums: List<String>,
+    val absentStudentNums: List<String>,
 )
